@@ -1,0 +1,61 @@
+#--------------------------------------------------------------
+# Fake EL734 motor. I do not bother with acceleration and 
+# deacceleration, just run linearly. All the parameters I 
+# ignore are held in a dictionary
+#
+# Mark Koennecke, June 2015
+#-------------------------------------------------------------
+import time
+import math
+
+class EL734Motor(Object):
+    """
+    PSI EL734 fake motor 
+    """
+    def __init(self):
+        self.currentStep = 0
+        self.gear = 1000
+        self.speed = 1000
+        self.targetStep = 0
+        self.lowlim = -180.
+        self.highlim = 360.
+        self.par = {"a" : "3", "ec" : "1 2", "ep" : "1", "fd": "500 1", \
+                        "d" : "0.1", "e" : "20", "f" : "1", "g" : "300", \
+                        "k" :"1", "l" : "0", "m" : "3", "q" : "0.0" \
+                        "t" : "0", "v" : "16000", "w" : "0", "z" : "0"}
+        self.startime = time.time()
+        self.moving = False
+
+    def setpar(self,key,val):
+        if key in self.par.keys():
+            self.par[key] = val
+            return ""
+        else:
+            if key == "j":
+                self.speed = int(val)
+                return ""
+            elif key == "fm":
+                l = val.split()
+                self.gear = int(l[1])
+                return ""
+            else:
+                return "?CMD"
+
+    def getpar(self,key):
+        if key in self.par.keys():
+            return self.par[key]
+        else:
+            if key == "j":
+                return str(self.speed)
+            elif key == "fm":
+                return "%d 1" % self.gear
+            else :
+                return "?CMD"
+
+    def setlimits(self,l,h):
+        self.highlim = h
+        self.lowlim = l
+
+    def getlimits(self):
+        return (self.lowlim,self.highlim)
+
