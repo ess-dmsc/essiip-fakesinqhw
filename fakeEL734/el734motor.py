@@ -8,15 +8,15 @@
 import time
 import math
 
-class EL734Motor(Object):
+class EL734Motor(object):
     """
     PSI EL734 fake motor 
     """
-    def __init(self):
+    def __init__(self):
         self.currentstep = 0
         self.startstep = 0
         self.gear = 1000
-        self.speed = 1000
+        self.speed = 100
         self.targetstep = 0
         self.starttime = time.time()
         self.moving = False
@@ -28,15 +28,17 @@ class EL734Motor(Object):
         self.hithigh = False
         self.refrun = False
         self.reftarget = self.highlim * self.gear
+        self.target = .0
+        self.stopping = False
         self.par = {"a" : "3", "ec" : "1 2", "ep" : "1", "fd": "500 1", \
                         "d" : "0.1", "e" : "20", "f" : "1", "g" : "300", \
-                        "k" :"1", "l" : "0", "m" : "3", "q" : "0.0" \
-                        "t" : "0", "w" : "0", "z" : "0"}
+                        "k" :"1", "l" : "0", "m" : "3", "q" : "0.0", \
+                        "t" : "0", "w" : "0", "z" : "0", 'mn' : 'xyz'}
 
     def setpar(self,key,val):
         if self.refrun:
             self.iterate()
-            return "*BSY"
+            return '*BSY'
         if key in self.par.keys():
             self.par[key] = val
             return ""
@@ -55,15 +57,15 @@ class EL734Motor(Object):
             elif key == "p":
                 self.startdrive(float(val))
                 return ""
-            elif key == 's':
-                self.stop = True
-                self.iterate()
-                return ""
             elif key == "v":
                 self.reftarget = int(val)
                 return ""
             elif key == "r":
                 self.refrun()
+                return ""
+            elif key == 's':
+                self.stop = True
+                self.iterate()
                 return ""
             else:
                 return "?CMD"
@@ -86,7 +88,11 @@ class EL734Motor(Object):
             elif key == "ss":
                 return self.calcss()
             elif key == "v":
-                return "%d%" % self.reftarget
+                return "%d" % self.reftarget
+            elif key == 's':
+                self.stop = True
+                self.iterate()
+                return ""
             else :
                 return "?CMD"
 
@@ -104,30 +110,40 @@ class EL734Motor(Object):
 
     def iterate(self):
         if self.moving:
-            tdiff = time.time() - self.starttime()
-            stepsDone = tdiff * self.gear
+            tdiff = time.time() - self.starttime
+            stepsDone = tdiff * self.speed
+            print('tdiff, stepsDone, startstep, targetstep, starttime: ' + str(tdiff) + ', ' + str(stepsDone) + ', ' +
+                 str(self.startstep) + ', ' + str(self.targetstep) + ', ' + str(self.starttime) )
             if self.sign == 1:
                 # moving positive
                 curpos = self.startstep + stepsDone
                 if curpos >= self.targetstep:
                     self.moving = False
                     self.refrun = False
-                    if curpos > self.highlim * self.gear:
-                        self.currentstep = self.higlim * self.gear - 10
+                    if self.target  > self.highlim:
+                        self.currentstep = self.highlim * self.gear - 10
                         self.hithigh = True
+                    else:
+                        self.currentstep = self.target*self.gear
+
+                    self.stopping = True
                 else:
-                    self.currentstep = curpos
+                    self.currentstep = self.startstep + stepsDone
             else:
                 # moving negative
                 curpos = self.startstep - stepsDone 
-                if curpos <: self.targetstep:
+                if curpos <= self.targetstep:
                     self.moving = False
                     self.refrun = False
-                    if curpos < self.lowlim*self.gear:
+                    if self.target < self.lowlim:
                         self.currentstep = self.lowlim*self.gear + 10
                         self.hitlow = True
-                else :
-                    self.currentstep = curpos
+                    else :
+                        self.currentstep = self.target*self.gear
+                    self.stopping = True
+                else:
+                    self.currentstep = self.startstep - stepsDone
+                    
             if self.stop:
                 self.moving = False
                 self.refrun = False
@@ -138,20 +154,22 @@ class EL734Motor(Object):
         pos = self.currentstep/self.gear
         return "%6.3f" % (pos)
 
-    def startdrive(self,val):
+    def startdrive(self,target):
         self.startstep = self.currentstep
-        self.startime = time.time()
-        self.targetstep = r=target*self.gear
+        self.starttime = time.time()
+        self.targetstep = target*self.gear
         pos = self.currentstep/self.gear
         if target < pos:
             self.sign = -1
         else:
-            self.sign = 0
+            self.sign = 1
         self.hithigh = False
         self.hitlow = False
         self.moving = True
         self.stop = False
         self.refrun = False
+        self.target = target
+        self.stopping = False
 
     def calcmsr(self):
         self.iterate()
@@ -159,26 +177,31 @@ class EL734Motor(Object):
             msr = '1'
         else:
             msr = '0'
-        if self.currentstep == self.targetstep:
+        if self.stopping and self.currentstep == self.targetstep:
             msr += '1'
+            self.stopping = False
         else:
             msr += '0'
         msr += '0'
         if self.stop:
             msr += '1'
+            self.stop = False
         else:
             msr += '0'
         if self.hitlow:
             msr += '1'
+            self.hitlow = False
         else:
             msr += '0'
         if self.hithigh:
             msr += '1'
+            self.hithigh = False
         else:
             msr += '0'
             
-        msr += '00000000'
-        return "%d" % int(msr,2)
+        msr += '0000000000'
+        print('raw msr ' + msr[::-1])
+        return "%d" % int(msr[::-1],2)
 
     def calcss(self):
         self.iterate()
@@ -196,7 +219,7 @@ class EL734Motor(Object):
         else :
             ss += '0'
         ss += '0'
-        return "%d" % int(ss,2)
+        return "%d" % int(ss[::-1],2)
 
     def refrun(self):
         self.startdrive(self.reftarget/self.gear)

@@ -1,20 +1,20 @@
-#ClientPut [mota send mn 2  D1L  ]
- #ClientPut [mota send ec 2  1 2  ]
- #ClientPut [mota send ep 2  1  ]
- #ClientPut [mota send a  2  3  ]
- #ClientPut [mota send fd 2  500 1  ]
- #ClientPut [mota send fm 2  2000 1  ]
- #ClientPut [mota send d  2   0.1  ]
- #ClientPut [mota send e  2  20  ]
- #ClientPut [mota send f  2  1  ]
- #ClientPut [mota send g  2  300  ]
- #ClientPut [mota send h  2  -25.000  32.000  ]
- #ClientPut [mota send j  2  5000  ]
- #ClientPut [mota send k  2  1  ]
- #ClientPut [mota send l  2  0  ]
- #ClientPut [mota send m  2  3  ]
- #ClientPut [mota send q  2   0.000  ]
- #ClientPut [mota send t  2  0  ]
- #ClientPut [mota send v  2  16000  ]
- #ClientPut [mota send w  2  0  ]
- #ClientPut [mota send z  2  0  ]
+mn 2  D1L  
+ec 2  1 2  
+ep 2  1  
+a  2  3  
+fd 2  500 1  
+fm 2  2000 1  
+d  2   0.1  
+e  2  20  
+f  2  1  
+g  2  300  
+h  2  -25.000  32.000  
+j  2  5000  
+k  2  1  
+l  2  0  
+m  2  3  
+q  2   0.000  
+t  2  0  
+v  2  16000  
+w  2  0  
+z  2  0  
