@@ -37,7 +37,7 @@ class EL734Controller(LineReceiver):
 
     def lineReceived(self, data):
         print "lineReceived:", data
-        data = data.lower()
+        data = data.lower().strip()
 
         if self.remotestate == 0:
             if data.startswith('rmt 1'):

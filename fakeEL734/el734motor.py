@@ -30,6 +30,9 @@ class EL734Motor(object):
         self.reftarget = self.highlim * self.gear
         self.target = .0
         self.stopping = False
+        self.acfail = False
+        self.runfail = False
+        self.posfail = False
         self.par = {"a" : "3", "ec" : "1 2", "ep" : "1", "fd": "500 1", \
                         "d" : "0.1", "e" : "20", "f" : "1", "g" : "300", \
                         "k" :"1", "l" : "0", "m" : "3", "q" : "0.0", \
@@ -93,6 +96,15 @@ class EL734Motor(object):
                 self.stop = True
                 self.iterate()
                 return ""
+            elif key == 'xa':
+                self.acfail = True
+                return ""
+            elif key == 'xp':
+                self.posfail = True
+                return ""
+            elif key == 'xr':
+                self.runfail = True
+                return ""
             else :
                 return "?CMD"
 
@@ -129,6 +141,9 @@ class EL734Motor(object):
                     self.stopping = True
                 else:
                     self.currentstep = self.startstep + stepsDone
+                    if self.runfail or self.acfail:
+                        self.moving = False
+                        self.stopping = True
             else:
                 # moving negative
                 curpos = self.startstep - stepsDone 
@@ -143,6 +158,9 @@ class EL734Motor(object):
                     self.stopping = True
                 else:
                     self.currentstep = self.startstep - stepsDone
+                    if self.runfail or self.acfail:
+                        self.moving = False
+                        self.stopping = True
                     
             if self.stop:
                 self.moving = False
@@ -170,6 +188,9 @@ class EL734Motor(object):
         self.refrun = False
         self.target = target
         self.stopping = False
+        self.acfail = False
+        self.posfail = False
+        self.runfail = False
 
     def calcmsr(self):
         self.iterate()
@@ -198,8 +219,31 @@ class EL734Motor(object):
             self.hithigh = False
         else:
             msr += '0'
+        msr += '0'
+
+        if self.runfail:
+            msr += '1'
+            self.runfail = False
+        else:
+            msr += '0'
+        msr += '0'
+
+        if self.posfail:
+            msr += '1'
+            self.posfail = False
+        else:
+            msr += '0'
+        msr += '0'
+        msr += '0'
+        
+        if self.acfail:
+            msr += '1'
+            self.acfail = False
+        else:
+            msr += '0'
             
-        msr += '0000000000'
+        msr += '0'
+
         print('raw msr ' + msr[::-1])
         return "%d" % int(msr[::-1],2)
 
