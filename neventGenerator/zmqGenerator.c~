@@ -1,0 +1,27 @@
+/**
+ * This is an n-event generator which reads a NeXus file, makes 
+ * an event list from it and sends that using 0MQ. 
+ *
+ * Mark Koennecke, June 2015
+ */
+#include <stdio.h>
+#include "nexus2event.h"
+
+int main(int argc, char *argv[])
+{
+  pNEventArray data = NULL;
+
+  if(argc < 3) {
+    printf("usage:\n\tzmqGenerator nexusfile portNo\n");
+    return 1;
+  }
+
+  data = loadNeXus2Events(argv[1]);
+  if(data == NULL){
+    printf("Failed to load NeXus data to events\n");
+  }
+  killNEventArray(&data);
+
+  return 0;
+}
+ 

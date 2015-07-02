@@ -1,0 +1,15 @@
+# Makefile for zmqGenerator
+
+OBJ=neventArray.o zmqGenerator.o nexus2event.o
+NXINSTALL=/afs/psi.ch/project/sinq/sl6
+
+
+.c.o:
+	$(CC) -c -g -I$(NXINSTALL)/include $*.c
+
+zmqGenerator: $(OBJ)
+	$(CC) -g -o zmqGenerator -L$(NXINSTALL)/lib $(OBJ) -lNeXus -lhdf5 -lsz
+
+
+
+
