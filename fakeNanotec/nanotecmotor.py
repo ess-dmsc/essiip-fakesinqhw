@@ -97,8 +97,10 @@ class NanotecMotor(object):
             elif self.mode == 'refrun':
                 if self.refdir == 0:
                     self.targetstep = self.minref
+                    self.sign = -1
                 else:
                     self.targetstep = self.maxref
+                    self.sign = 1
                 self.starttime = time.time()
                 self.moving = True
             else:
@@ -125,6 +127,11 @@ class NanotecMotor(object):
                 val = int(par)
             self.currentstep = val
             return self.makeReturn(com,val)
+
+        if com.startswith('d'):
+#            self.currentstep = val
+#            direction ignored for now
+            return self.makeReturn(com,par)
 
         if com.startswith('S'):
             self.iterate()
