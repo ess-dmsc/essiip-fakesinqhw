@@ -1,0 +1,5 @@
+#!/bin/sh
+INSTRUMENT=${HOSTNAME#ics1-}
+
+socat READLINE,history=history tcp4:127.0.0.1:server-${INSTRUMENT},crlf
+

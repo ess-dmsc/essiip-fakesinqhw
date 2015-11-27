@@ -10,7 +10,7 @@ import os
 import sys
 import time
 
-sys.path.insert(0, os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]),"../../../util"))))
+sys.path.insert(0, os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]),"../../util"))))
 from fopdt import fopdt, fopdt_sink
 from pid import PID
 

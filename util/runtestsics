@@ -1,0 +1,93 @@
+#!/bin/sh
+# We should really have an init script calling this or something like it.
+INSTRUMENT=${HOSTNAME#ics1-}
+
+# Start SICS
+startsics() {
+	if netstat -ltp 2> /dev/null|grep -q "server-${INSTRUMENT}.*SICServer"; then
+		echo SICS is already running
+		return 1
+	fi
+	echo Starting SICS
+	cd /usr/local/TEST_SICS/${INSTRUMENT}/sics/server
+	SICS_SIMULATION=full nohup $PWD/SICServer ${INSTRUMENT}_configuration.tcl
+	if netstat -ltp 2> /dev/null|grep -q "server-${INSTRUMENT}.*SICServer"; then
+		echo SUCCESS
+		return 1
+	else
+		echo SICS failed to start
+		return 0
+	fi
+}
+
+# Start script validator
+startscriptvalidator() {
+	if netstat -ltp 2> /dev/null|grep -q "server-val-${INSTRUMENT}.*SICServer"; then
+		echo SICS script validator is already running
+		return 1
+	fi
+	echo Starting SICS Script Validator
+	cd /usr/local/TEST_SICS/${INSTRUMENT}/sics/server
+	SICS_SIMULATION=script_validator nohup $PWD/SICServer ${INSTRUMENT}_configuration.tcl
+
+	if netstat -ltp 2> /dev/null|grep -q "server-val-${INSTRUMENT}.*SICServer"; then
+		echo SUCCESS
+		return 1
+	else
+		echo SICS script validator failed to start
+		return 0
+	fi
+}
+
+usage() {
+	progname=`basename $0`
+	echo Usage: $progname start
+	echo "To start SICS and the Script validator"
+	echo
+	echo You can get status or stop SICS as follows,
+	echo $progname status
+	echo $progname stop
+}
+
+if [ $# -eq 0 ]
+then
+	usage
+	exit
+fi
+
+if [ $1 = "start" ]
+then
+	startsics
+	echo
+	startscriptvalidator
+	echo
+elif [ $1 = "stop" ]
+then
+	if  killall SICServer; then
+		echo Terminating all SICS servers
+	else
+		echo No SICS servers are running
+	fi
+	if netstat -ltp 2> /dev/null|grep -q "server-${INSTRUMENT}.*SICServer"; then
+		echo FAILED to stop SICServer 
+	else
+		echo SICServer stopped
+	fi
+	if netstat -ltp 2> /dev/null|grep -q "server-val-${INSTRUMENT}.*SICServer"; then
+		echo FAILED to stop SICS script validator
+	else
+		echo SICS script validator stopped
+	fi
+elif [ $1 = "status" ]
+then
+	if netstat -ltp 2> /dev/null|grep -q "server-${INSTRUMENT}.*SICServer"; then
+		echo SICServer  running
+	else
+		echo SICServer NOT running
+	fi
+	if netstat -ltp 2> /dev/null|grep -q "server-val-${INSTRUMENT}.*SICServer"; then
+		echo SICS script validator running
+	else
+		echo SICS script validator NOT running
+	fi
+fi

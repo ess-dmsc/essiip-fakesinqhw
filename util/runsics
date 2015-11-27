@@ -1,0 +1,117 @@
+#!/bin/sh
+ulimit -c unlimited 
+# We should really have an init script calling this or something like it.
+INSTRUMENT=${HOSTNAME#ics1-}
+
+intserverport=60002
+serverport=60003
+
+intvalport=60012
+valport=60013
+
+# Start SICS
+startsics() {
+	if netstat -nltp 2> /dev/null|grep -q "${serverport}.*SICServer"; then
+		echo SICS is already running
+		return 1
+	fi
+	echo Starting SICS
+	cd /usr/local/sics/server
+	nohup $PWD/SICServer ${INSTRUMENT}_configuration.tcl
+	if netstat -nltp 2> /dev/null|grep -q "${serverport}.*SICServer"; then
+		echo SUCCESS
+		return 1
+	else
+		echo SICS failed to start
+		return 0
+	fi
+}
+
+# Start script validator
+startscriptvalidator() {
+	if netstat -nltp 2> /dev/null|grep -q "${valport}.*SICServer"; then
+		echo SICS script validator is already running
+		return 1
+	fi
+	echo Starting SICS Script Validator
+	cd /usr/local/sics/server/
+	SICS_SIMULATION=script_validator nohup $PWD/SICServer ${INSTRUMENT}_configuration.tcl
+
+	if netstat -nltp 2> /dev/null|grep -q "${valport}.*SICServer"; then
+		echo SUCCESS
+		return 1
+	else
+		echo SICS script validator failed to start
+		return 0
+	fi
+}
+
+stopsics() {
+	if netstat -nltp 2> /dev/null|grep -q "${serverport}.*SICServer"; then
+		echo "SICSINT 6" |socat STDIN UDP4:localhost:${intserverport},crlf
+	fi
+	if netstat -nltp 2> /dev/null|grep -q "${serverport}.*SICServer"; then
+		echo FAILED to stop SICServer 
+	else
+		echo SICServer stopped
+	fi
+}
+
+stopscriptvalidator() {
+	if netstat -nltp 2> /dev/null|grep -q "${valport}.*SICServer"; then
+		echo "SICSINT 6" |socat STDIN UDP4:localhost:${intvalport},crlf
+	fi
+	if netstat -nltp 2> /dev/null|grep -q "${valport}.*SICServer"; then
+		echo FAILED to stop SICS script validator
+	else
+		echo SICS script validator stopped
+	fi
+}
+
+usage() {
+	progname=`basename $0`
+	echo Usage: $progname start
+	echo "To start SICS and the Script validator"
+	echo
+	echo You can get status or stop SICS as follows,
+	echo $progname status
+	echo $progname stop
+}
+
+if [ $# -eq 0 ]
+then
+	usage
+	exit
+fi
+
+if [ $1 = "start" ]
+then
+	startsics
+	echo
+	startscriptvalidator
+	echo
+elif [ $1 = "stop" ]
+then
+	if netstat -nltp 2> /dev/null|grep -q "${serverport}.*SICServer"; then
+    stopsics
+	else
+		echo SICServer NOT running
+	fi
+	if netstat -nltp 2> /dev/null|grep -q "${valport}.*SICServer"; then
+    stopscriptvalidator
+	else
+		echo SICS script validator NOT running
+	fi
+elif [ $1 = "status" ]
+then
+	if netstat -nltp 2> /dev/null|grep -q "${serverport}.*SICServer"; then
+		echo SICServer  running
+	else
+		echo SICServer NOT running
+	fi
+	if netstat -nltp 2> /dev/null|grep -q "${valport}.*SICServer"; then
+		echo SICS script validator running
+	else
+		echo SICS script validator NOT running
+	fi
+fi

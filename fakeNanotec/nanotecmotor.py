@@ -24,8 +24,8 @@ class NanotecMotor(object):
         self.startstep  = 0
         self.mode =  'none'
         self.sign = 1
-        self.minref = minref
-        self.maxref = maxref
+        self.minref = float(minref)
+        self.maxref = float(maxref)
         self.refdir = 0
 
 

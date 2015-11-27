@@ -12,7 +12,7 @@ from MercuryProtocol import MercuryProtocol
 import os
 import sys
 
-sys.path.insert(0, os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]),"../../../util"))))
+sys.path.insert(0, os.path.realpath(os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]),"../../util"))))
 from displayscreen import Screen
 
 class MyOptions(usage.Options):
