@@ -10,7 +10,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#include <assert.h>
+
 #include <zmq.h>
+
+#include "neventArray.h"
+/* #include "config.h" */
 
 
 int main(int argc, char *argv[])
@@ -23,8 +28,15 @@ int main(int argc, char *argv[])
   time_t statTime;
   char headerData[1024];
   char *pPtr, *pEnd;
-  int64_t *dataBuffer = NULL, rtimestamp[2];
-  unsigned int dataBufferSize = 0;
+  //  int64_t *dataBuffer = NULL, rtimestamp[2];
+  ///////////////////////
+  // hack
+  int32_t rtimestamp[2];
+  int64_t *dataBuffer = NULL, *dataTimeStamp = NULL;
+
+  unsigned int dataBufferSize = 0, dataTimeStampSize = 0;
+
+  int i;
 
   if(argc < 2) {
     printf("usage:\n\tzmqReader endpoint\n\twith endpoint being in the format: tcp://host:port\n");
@@ -35,10 +47,17 @@ int main(int argc, char *argv[])
    * initialize 0mq
    */
   zmqContext = zmq_ctx_new();
+  //  pullSocket = zmq_socket(zmqContext,ZMQ_SUB);
   pullSocket = zmq_socket(zmqContext,ZMQ_PULL);
-  status = zmq_connect(pullSocket,argv[1]);
 
+  status = zmq_connect(pullSocket,argv[1]);
+  assert(status == 0);
+  status = zmq_setsockopt (pullSocket, ZMQ_SUBSCRIBE,
+                           "", 0);
+  
   statTime = time(NULL);
+
+  
   while(1) {
     /*
       receive global header and pull out pulseID
@@ -49,6 +68,9 @@ int main(int argc, char *argv[])
     } else {
       headerData[bytesRead] = '\0';
     }
+
+    /* printf("headerData: %s\n",headerData); */
+
     /*
       This bit is for synchronisation: we may connect to the server 
       mid-message...
@@ -60,6 +82,7 @@ int main(int argc, char *argv[])
       /* printf("Global header: %s\n",headerData); */
       byteCount += bytesRead;
     }
+
     pPtr = strstr(headerData, "pulse_id\":");
     if(pPtr != NULL){
       pPtr += strlen( "pulse_id\":");
@@ -80,6 +103,7 @@ int main(int argc, char *argv[])
     headerData[bytesRead] = '\0';
     byteCount += bytesRead;
     /* printf("Data header: %s\n",headerData); */
+
     pPtr = strstr(headerData, "shape\":[");
     if(pPtr != NULL){
       pPtr += strlen("shape\":[");
@@ -97,12 +121,20 @@ int main(int argc, char *argv[])
       if(dataBuffer != NULL){
 	free(dataBuffer);
       }
-      dataBuffer = malloc(nEvents*sizeof(int64_t));
-      if(dataBuffer == NULL){
-	printf("Out of memory allocating data buffer\n");
+      if(dataTimeStamp != NULL){
+	free(dataTimeStamp);
+      }
+      //      dataBufferSize = nEvents*sizeof(int64_t);
+      dataBufferSize = nEvents*sizeof(int64_t);
+      dataBuffer = malloc(dataBufferSize);
+
+      dataTimeStampSize = nEvents*sizeof(int32_t);
+      dataTimeStamp = malloc(dataTimeStampSize);
+
+      if(dataBuffer == NULL ||  dataTimeStamp == NULL){
+	printf("Out of memory allocating data buffers\n");
 	return 1;
       }
-      dataBufferSize = nEvents*sizeof(int64_t);
     }
 
     /*
@@ -110,7 +142,8 @@ int main(int argc, char *argv[])
     */
     byteCount += zmq_recv(pullSocket,dataBuffer,dataBufferSize,0);
     byteCount += zmq_recv(pullSocket,rtimestamp,sizeof(rtimestamp),0);
-    byteCount += zmq_recv(pullSocket,dataBuffer,dataBufferSize,0);
+
+    byteCount += zmq_recv(pullSocket,dataTimeStamp,dataTimeStampSize,0);
     byteCount += zmq_recv(pullSocket,rtimestamp,sizeof(rtimestamp),0);
 
     /*
@@ -125,13 +158,15 @@ int main(int argc, char *argv[])
       nCount = 0;
       statTime = time(NULL);
     }
+    
   }
-
+      
   /*
     never get here, but close it anyway
   */
   zmq_close(pullSocket);
   zmq_ctx_destroy(zmqContext);
+
 
   return 0;
 
