@@ -40,7 +40,10 @@ void killNEventArray(pNEventArray *pself)
     free(*pself);
   }
 }
+
 /*-----------------------------------------------------------*/
+/////////////////
+// hack
 pNEventArray multiplyNEventArray(pNEventArray source, unsigned int factor)
 {
   pNEventArray result;
