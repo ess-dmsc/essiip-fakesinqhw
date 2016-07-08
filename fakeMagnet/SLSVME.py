@@ -41,7 +41,7 @@ class SLSVME(LineReceiver):
             value = magnet.cur
         elif comlist[2] == 'err':
             value = magnet.err
-        elif comlist[2] == 'errText':
+        elif comlist[2] == 'errtext':
             value = magnet.errText
         elif comlist[2] == 'onoff':
             value = magnet.onoff
