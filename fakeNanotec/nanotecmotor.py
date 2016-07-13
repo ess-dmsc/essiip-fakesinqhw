@@ -27,6 +27,7 @@ class NanotecMotor(object):
         self.minref = float(minref)
         self.maxref = float(maxref)
         self.refdir = 0
+        self.limitReported = False
 
 
     def iterate(self):
@@ -91,6 +92,7 @@ class NanotecMotor(object):
 
         if com.startswith('A'):
             self.startstep = self.currentstep
+            self.limitReported = False
             if self.mode == 'abs':
                 self.starttime = time.time()
                 self.moving = True
@@ -109,14 +111,22 @@ class NanotecMotor(object):
 
         if com.startswith('$'):
             self.iterate()
+            if self.currentstep <= self.minref or self.currentstep >= self.maxref:
+                self.moving = False
+                if self.mode == 'refrun':
+                    self.limitReported = True
+                    return self.makeReturn(com,163)
+                if self.limitReported:
+                    pass
+                else:
+                    self.limitReported = True
+                    return self.makeReturn(com,164)
+ 
             if self.moving:
                 mask = '0'
             else:
                 mask = '1'
-            if self.currentstep == self.minref or self.currentstep == self.maxref:
-                mask += '1'
-            else:
-                mask += '0'
+            mask += '0'
             mask += '000101'
             return self.makeReturn(com,int(mask[::-1],2))
             
