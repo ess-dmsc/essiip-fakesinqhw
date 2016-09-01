@@ -120,7 +120,7 @@ proc processMotor {motar motcom} {
 	return
     }
 
-    if {[string first =E motcom] >= 0} {
+    if {[string first =E $motcom] >= 0} {
 	phyReply 0 N
 	return
     }
