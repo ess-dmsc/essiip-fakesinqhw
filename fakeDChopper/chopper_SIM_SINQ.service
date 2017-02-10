@@ -1,0 +1,9 @@
+[Unit]
+Description=Dornier Chopper Simulation
+After=rc-local.service
+
+[Service]
+ExecStart=/usr/bin/python /opt/amor/essiip-fakesinqhw/fakeDChopper/SIM_SINQ.py
+
+[Install]
+WantedBy=multi-user.target

@@ -12,6 +12,8 @@
 #include "posix_timers.h"
 #include "md5.h"
 
+/* #include "config.h" */
+
 static unsigned long pulseID = 0L; 
 
 void timer_func() 
@@ -35,6 +37,8 @@ int main(int argc, char *argv[])
   time_t statTime;
   int64_t rtimestamp[2];
   unsigned int multiplier = 1;
+  int i;
+  int hwm_value = 2;
 
   if(argc < 3) {
     printf("usage:\n\tzmqGenerator nexusfile portNo [multiplier]\n");
@@ -49,13 +53,13 @@ int main(int argc, char *argv[])
     printf("Failed to load NeXus data to events\n");
   }
 
-
   /*
     handle multiplier
   */
-  if(argc >= 3){
+  if(argc > 3){
     multiplier = atoi(argv[3]);
     tmp = multiplyNEventArray(data,multiplier);
+
     if(tmp == NULL){
       printf("Failed to multiply event array by %d\n", multiplier);
     } else {
@@ -70,20 +74,27 @@ int main(int argc, char *argv[])
     create dataHeader
   */
   snprintf(dataHeader,sizeof(dataHeader),
-	   "{\"htype\": \"bsr_d-1.0\", \"channels\" :[{\"name\":\"detectorID\", \"type\":\"long\",\"shape\":[%ld] }, [{\"name\":\"timestamps\", \"type\":\"int\",\"shape\":[%ld] } ]}", 
-	   data->count, data->count);
+           "{\"htype\": \"bsr_d-1.0\", \"channels\" :[{\"name\":\"detectorID\", \"type\":\"long\",\"shape\":[%ld] }, [{\"name\":\"timestamps\", \"type\":\"int\",\"shape\":[%ld] } ]}", 
+           data->count, data->count);
+  
   MD5Init(&md5Context);
   MD5Update(&md5Context,dataHeader,strlen(dataHeader));
   MD5Final(md5Hash,&md5Context);
   /* printf("%s, hash =%x\n",dataHeader,md5Hash);  */
 
+
   /*
     initialize 0MQ
   */
   zmqContext = zmq_ctx_new();
+
+  //  pushSocket = zmq_socket(zmqContext,ZMQ_PUB);
   pushSocket = zmq_socket(zmqContext,ZMQ_PUSH);
   snprintf(sockAddress,sizeof(sockAddress),"tcp://*:%s",argv[2]);
+
   zmq_bind(pushSocket,sockAddress);
+
+  i = setsockopt(ZMQ_SNDHWM, &hwm_value, sizeof(hwm_value));
 
   /*
     start timer
@@ -121,12 +132,17 @@ int main(int argc, char *argv[])
 	send the stuff away 
       */
       byteCount += zmq_send(pushSocket,globalHeader,strlen(globalHeader),ZMQ_SNDMORE);
-      byteCount += zmq_send(pushSocket,dataHeader,strlen(dataHeader),ZMQ_SNDMORE);
-      byteCount += zmq_send(pushSocket,data->detectorID,data->count*sizeof(int64_t),ZMQ_SNDMORE);
-      byteCount += zmq_send(pushSocket,rtimestamp,2*sizeof(int64_t), ZMQ_SNDMORE);
-      byteCount += zmq_send(pushSocket,data->timeStamp,data->count*sizeof(int32_t),ZMQ_SNDMORE);
-      byteCount += zmq_send(pushSocket,rtimestamp,2*sizeof(int64_t), 0);
 
+      byteCount += zmq_send(pushSocket,dataHeader,strlen(dataHeader),ZMQ_SNDMORE);
+
+      byteCount += zmq_send(pushSocket,data->detectorID,data->count*sizeof(int64_t),ZMQ_SNDMORE);
+
+      byteCount += zmq_send(pushSocket,rtimestamp,2*sizeof(int64_t), ZMQ_SNDMORE);
+
+      byteCount += zmq_send(pushSocket,data->timeStamp,data->count*sizeof(int32_t),ZMQ_SNDMORE);
+
+      byteCount += zmq_send(pushSocket,rtimestamp,2*sizeof(int64_t), 0);
+      
       /*
 	handle statistics
       */
