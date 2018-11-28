@@ -50,6 +50,7 @@ include_directories(
   ${HDF5_INCLUDE_DIR}
   ${ZMQ_INCLUDE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
+  /afs/psi.ch/project/sinq/rhel7/include
   )
 
 set(libraries_common
@@ -67,7 +68,7 @@ Configuration.cxx
 Errors.cxx
 )
 
-foreach(tgt AMORgenerator AMORreceiver)
+foreach(tgt AMORgenerator AMORreceiver FOCUSgenerator FOCUSreceiver)
   set(sources
     ${tgt}.cxx
     $<TARGET_OBJECTS:nevent-generator__objects>

@@ -218,4 +218,121 @@ void Amor::toEventFmt<ESSformat::value_type>(
   }
 }
 
+
+///  \author Mark Koennecke, mark.koennecke@psi.ch
+///  \date November 2018
+struct Focus {
+  static const int n_monitor = 2;
+  std::vector<std::string>::iterator begin() { return path.begin(); }
+  std::vector<std::string>::iterator end() { return path.end(); }
+  std::vector<std::string>::const_iterator begin() const {
+    return path.begin();
+  }
+  std::vector<std::string>::const_iterator end() const { return path.end(); }
+
+  Focus() {
+    path.emplace_back("/entry1/FOCUS/merged/counts");
+    path.emplace_back("/entry1/FOCUS/merged/time_binning");
+  }
+
+  template <typename T>
+  void operator()(const H5::H5File &file, std::vector<T> &stream) {
+
+    {
+      H5::DataSet dataset = file.openDataSet(path[0]);
+      H5::DataSpace dataspace = dataset.getSpace();
+      int rank = dataspace.getSimpleExtentNdims();
+      dim.resize(rank);
+      dataspace.getSimpleExtentDims(&dim[0], nullptr);
+      H5::DataSpace memspace(rank, &dim[0]);
+      data.resize(memspace.getSelectNpoints());
+      dataset.read(&data[0], H5::PredType::NATIVE_INT, memspace, dataspace);
+    }
+    {
+      H5::DataSet dataset = file.openDataSet(path[1]);
+      H5::DataSpace dataspace = dataset.getSpace();
+      int rank = dataspace.getSimpleExtentNdims();
+      hsize_t tof_dim{0};
+      dataspace.getSimpleExtentDims(&tof_dim, nullptr);
+      if (tof_dim != dim[1]) {
+        throw std::runtime_error(
+            "Time extent in histogram differs from ToF length");
+      }
+      dim.push_back(tof_dim);
+
+      H5::DataSpace memspace(rank, &tof_dim);
+      tof.resize(memspace.getSelectNpoints());
+      dataset.read(&tof[0], H5::PredType::NATIVE_FLOAT, memspace, dataspace);
+    }
+
+    toEventFmt<T>(stream);
+  }
+
+  std::vector<std::string> path;
+
+private:
+  std::vector<int32_t> data;
+  std::vector<float> tof;
+  std::vector<hsize_t> dim;
+
+  template <typename T> void toEventFmt(std::vector<T> &signal) {
+    throw std::runtime_error("Error, stream format unknown");
+  }
+};
+
+  template <>
+  void Focus::toEventFmt<PSIformat::value_type>(
+						std::vector<PSIformat::value_type> &signal) {
+  int offset, nCount;
+  int detID = 0;
+
+    union {
+      uint64_t value;
+      struct LoHi {
+	uint32_t low;
+	uint32_t high;
+      } part;
+    } x;
+
+    for (hsize_t i = 0; i < dim[0]; ++i) {
+      detID++;
+      offset = i*dim[1];
+      for (hsize_t k = 0; k < dim[1]; ++k) {
+        nCount = data[offset + k];
+        x.part.high = std::round(tof[k] / 10.);
+        x.part.low =  detID;
+        for (int l = 0; l < nCount; ++l) {
+          signal.push_back(x.value);
+        }
+      }
+    }
+  }
+
+
+template <>
+void Focus::toEventFmt<ESSformat::value_type>(
+    std::vector<ESSformat::value_type> &signal) {
+  unsigned long nEvents = std::accumulate(data.begin(), data.end(), 0);
+  uint32_t detID = 0;
+  int offset, nCount;
+  int counter = 0;
+
+  std::cout << "ESSformat : " << nEvents << " events\n";
+
+  signal.resize(2 * nEvents);
+  for (hsize_t i = 0; i < dim[0]; ++i) {
+      offset = i*dim[1];
+      for (hsize_t k = 0; k < dim[1]; ++k) {
+        nCount = data[offset + k];
+        for (int l = 0; l < nCount; ++l) {
+          signal[counter] = std::round(tof[k] / 10.);
+          signal[counter + nEvents] = detID;
+          counter++;
+        }
+      }
+      detID++;
+    }
+}
+
+
 } // namespace SINQAmorSim
