@@ -1,0 +1,24 @@
+[requires]
+gtest/3121b20-dm3@ess-dmsc/stable
+FlatBuffers/1.9.0@ess-dmsc/stable
+hdf5/1.10.1-dm3@ess-dmsc/stable
+librdkafka/0.11.1-dm1@ess-dmsc/stable
+RapidJSON/1.1.0-dm1@ess-dmsc/stable
+jsonformoderncpp/3.1.0@vthiery/stable
+streaming-data-types/d429d55@ess-dmsc/stable
+
+[generators]
+cmake
+virtualrunenv
+
+[options]
+FlatBuffers:shared=True
+gtest:shared=True
+hdf5:shared=True
+librdkafka:shared=True
+
+[imports]
+lib, *.dylib* -> ./lib
+lib, *.so* -> ./lib
+lib64, *.so* -> ./lib
+., LICENSE* -> ./licenses @ folder=True, ignore_case=True

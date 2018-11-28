@@ -1,0 +1,18 @@
+{
+    "producer_uri" : "//192.168.10.11:9092/AMOR.area.detector",
+    "source" : "files/amor2015n001774.hdf",
+    "multiplier" : 1,
+    "rate" : 10,
+    "source_name": "AMOR.event.stream",
+    "timestamp_generator" : "const_timestamp",
+    "report_time" : 1,
+    "bytes" : 10000,
+    "kafka_options" : {
+        "receive.message.max.bytes" : 10010010,
+        "max.message.bytes" : 10010010,
+        "message.max.bytes" : 10010010,
+        "fetch.message.max.bytes" :   1010010,
+        "api.version.request" : "true"
+    },
+    "num_threads" : 1
+}
