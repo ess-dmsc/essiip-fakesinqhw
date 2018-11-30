@@ -299,7 +299,7 @@ private:
       offset = i*dim[1];
       for (hsize_t k = 0; k < dim[1]; ++k) {
         nCount = data[offset + k];
-        x.part.high = std::round(tof[k] / 10.);
+        x.part.high = std::round(tof[k]);
         x.part.low =  detID;
         for (int l = 0; l < nCount; ++l) {
           signal.push_back(x.value);
@@ -325,7 +325,7 @@ void Focus::toEventFmt<ESSformat::value_type>(
       for (hsize_t k = 0; k < dim[1]; ++k) {
         nCount = data[offset + k];
         for (int l = 0; l < nCount; ++l) {
-          signal[counter] = std::round(tof[k] / 10.);
+          signal[counter] = std::round(tof[k]);
           signal[counter + nEvents] = detID;
           counter++;
         }
