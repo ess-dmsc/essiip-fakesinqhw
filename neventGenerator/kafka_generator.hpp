@@ -143,6 +143,7 @@ size_t KafkaTransmitter<FlatBufferSerialiser>::send(
   if (NumEvents) {
     SerialiserWorker->serialise(PacketID, PulseTime, Events);
     BufferSize = SerialiserWorker->size();
+    //std::cout << "Flatbuffer size: " << BufferSize << std::endl;
     RdKafka::ErrorCode resp = Producer->produce(
         Topic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY,
         reinterpret_cast<void *>(SerialiserWorker->get()),

@@ -1,5 +1,5 @@
 {
-    "producer_uri" : "//192.168.10.11:9092/AMOR.area.detector",
+    "producer_uri" : "//ess01:9092/AMOR.test",
     "source" : "files/amor2015n001774.hdf",
     "multiplier" : 1,
     "rate" : 10,
@@ -7,7 +7,7 @@
     "timestamp_generator" : "const_timestamp",
     "report_time" : 1,
     "bytes" : 10000,
-    "kafka_options" : {
+    "kafka" : {
         "receive.message.max.bytes" : 10010010,
         "max.message.bytes" : 10010010,
         "message.max.bytes" : 10010010,

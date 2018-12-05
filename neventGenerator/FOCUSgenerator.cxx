@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 
 #include "generator.hpp"
 #include "mcstas_reader.hpp"
@@ -45,9 +46,24 @@ int main(int argc, char **argv) {
     std::cout << e.what() << "\n";
     return -1;
   }
-  if (config.bytes > 0) {
-    data.resize(config.bytes / sizeof(StreamFormat::value_type));
-  }
+
+  // for debugging: write what actually is being sent
+  // {
+  //   std::ofstream out;
+  //   out.open("evdata.dat");
+  //   int nEV = data.size()/2.;
+  //   for(int i = 0; i < nEV; i++){
+  //     out << data[i] << "/" << data[i+nEV] << std::endl;
+  //   }
+  //   out.close(); 
+  // }
+
+
+  // WARNING 45.3: This blind resize makes the data meaningless...
+  // if (config.bytes > 0) {
+  //   data.resize(config.bytes / sizeof(StreamFormat::value_type));
+  // }
+
 
   try {
     Generator<Communication, Control, Serialiser> g(config);
