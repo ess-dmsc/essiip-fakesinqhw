@@ -1,6 +1,9 @@
 cmake_minimum_required (VERSION 2.8)
 set(PROJECT_NAME_STR neventGenerator)
 project(${PROJECT_NAME_STR} CXX)
+
+set(CMAKE_CXX_STANDARD 11)
+
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${PROJECT_SOURCE_DIR}/cmake")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -14,9 +17,26 @@ else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=auto")
 endif()
 
-if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-  conan_basic_setup(NO_OUTPUT_DIRS)
+SET(CONAN_PROFILE "default" CACHE STRING "Name of conan profile to use, uses default by default")
+SET(CONAN "AUTO" CACHE STRING "conan options AUTO (conan must be in path), MANUAL (expects conanbuildinfo.cmake in build directory) or DISABLE")
+
+if(${CONAN} MATCHES "AUTO")
+  include(${CMAKE_MODULE_PATH}/conan.cmake)
+  conan_cmake_run(CONANFILE conan/conanfile.txt
+          PROFILE ${CONAN_PROFILE}
+          BASIC_SETUP ${OUTPUT_DIRS} SKIP_RPATH
+          BUILD_TYPE "None"
+          BUILD outdated)
+elseif(${CONAN} MATCHES "MANUAL")
+  if(EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+    include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
+    conan_basic_setup(${OUTPUT_DIRS} SKIP_RPATH
+            )
+  else()
+    MESSAGE(FATAL_ERROR "CONAN set to MANUAL but no file named conanbuildinfo.cmake found in build directory")
+  endif()
+elseif(NOT ${CONAN} MATCHES "DISABLE")
+  MESSAGE(FATAL_ERROR "Unrecognised option for CONAN, use AUTO, MANUAL or DISABLE")
 endif()
 
 set (CMAKE_CXX_FLAGS "-std=c++11 -D_GLIBCXX_USE_NANOSLEEP ${CMAKE_CXX_FLAGS}")
@@ -31,7 +51,7 @@ add_custom_target(
 find_package(RdKafka REQUIRED)
 find_package(Flatbuffers REQUIRED)
 find_package(HDF5 REQUIRED)
-find_package(StreamingDataTypes COMPONENTS d2247ffd906ebeeb68c9b8a2ea9f1d36c1d88a46 REQUIRED)
+find_package(StreamingDataTypes COMPONENTS 2246f84b16423b7ac18e901bf4c43a006fe635dc REQUIRED)
 find_package(Googletest)
 
 option(HAVE_ZMQ "Enable 0MQ" FALSE)
@@ -41,8 +61,6 @@ else()
   message(STATUS "Build without 0MQ support")
 endif()
 
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 include_directories(
   ${RDKAFKA_INCLUDE_DIR}
   ${FLATBUFFERS_INCLUDE_DIR}
@@ -50,7 +68,6 @@ include_directories(
   ${HDF5_INCLUDE_DIR}
   ${ZMQ_INCLUDE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
-  /afs/psi.ch/project/sinq/rhel7/include
   )
 
 set(libraries_common
@@ -82,7 +99,6 @@ endforeach()
 if(NOT ${CMAKE_INSTALL_PREFIX} EQUAL "")
   message(STATUS "Files will be installed in : " ${CMAKE_INSTALL_PREFIX})
   install(TARGETS AMORgenerator RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
-  install(FILES el737counter.py DESTINATION ${CMAKE_INSTALL_PREFIX})
   install(FILES config.json DESTINATION ${CMAKE_INSTALL_PREFIX})
   install(FILES files/amor2015n001774.hdf DESTINATION ${CMAKE_INSTALL_PREFIX}/files)
 else()
