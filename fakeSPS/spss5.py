@@ -15,13 +15,13 @@ import sys
 
 class SPSS5(LineReceiver):
     def __init__(self):
-        self.b1 = 0
+        self.b1 = 1
         self.b2 = 0
         self.b3 = 0
         self.b4 = 0
         self.b5 = 5
         self.b6 = 0
-        self.b7 = 0
+        self.b7 = 7
         self.b8 = 0
         self.b9 = 0
         self.b10 = 0

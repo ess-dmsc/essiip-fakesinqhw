@@ -5,6 +5,10 @@
 # I am using 1000cts/sec for m1, 500 for m2, 300 for m3 and 2000 for m4
 #
 # Mark Koennecke, July 2015
+#
+# Enhanced to go into no beam mode when the threshold is set to 500
+#
+# Mark Koennecke, October 2020 
 #----------------------------------------------------------------------
 from twisted.internet import reactor, protocol
 from twisted.protocols.basic import LineReceiver
@@ -21,6 +25,7 @@ class EL737Controller(LineReceiver):
         self.endtime = time.time()
         self.counting = False
         self.mypaused = False
+        self.nobeam = False
         self.pausestart = 0
         self.pausedTime = 0.
         self.threshold = 0
@@ -32,7 +37,11 @@ class EL737Controller(LineReceiver):
             self.transport.write(data)
     
     def calculateCountStatus(self):
-        if self.counting and not self.mypaused :
+        if self.threshold == 500:
+            self.nobeam = True
+        else:
+            self.nobeam = False
+        if self.counting and not self.mypaused and not self.nobeam:
             runtime = time.time() - self.starttime - self.pausedTime
             print(str(runtime) + ' versus ' + str(self.preset))
             if self.mode == 'timer':
@@ -120,10 +129,15 @@ class EL737Controller(LineReceiver):
            if data.startswith('dl'):
                l = data.split()
                if len(l) >= 3:
+                   if self.threshold == 500 and float(l[2]) != 500:
+                       self.pausedTime += time.time() - self.pausestart
                    self.threshold = float(l[2])
+                   if self.threshold == 500:
+                       self.pausestart = time.time()
                    self.write('\r')
                else:
                    self.write(str(self.threshold) + '\r')
+               return
 
            if data.startswith('dr'):
                l = data.split()
@@ -141,6 +155,11 @@ class EL737Controller(LineReceiver):
                            self.write('9\r')
                        else:
                            self.write('10\r')
+                   elif self.nobeam:
+                       if self.mode == 'timer':
+                           self.write('5\r')
+                       else:
+                           self.write('6\r')
                    else:
                        if self.mode == 'timer':
                            self.write('1\r')
@@ -153,7 +172,7 @@ class EL737Controller(LineReceiver):
            if data.startswith('ra'):
                self.calculateCountStatus()
                if self.counting:
-                   if self.mypaused:
+                   if self.mypaused or self.nobeam:
                        pausetime = time.time() - self.pausestart
                    else:
                        pausetime = self.pausedTime
